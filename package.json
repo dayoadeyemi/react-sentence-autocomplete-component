@@ -1,5 +1,6 @@
 {
   "name": "react-sentence-autocomplete-component",
+  "library": "SentenceAutoComplete",
   "version": "1.0.0",
   "scripts": {
     "build": "webpack --config webpack.config.babel.js",

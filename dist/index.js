@@ -1,16 +1,21 @@
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory();
+		module.exports = factory(require("React"));
 	else if(typeof define === 'function' && define.amd)
-		define([], factory);
+		define(["React"], factory);
 	else if(typeof exports === 'object')
-		exports["react-sentence-autocomplete-component"] = factory();
+		exports["SentenceAutoComplete"] = factory(require("React"));
 	else
-		root["react-sentence-autocomplete-component"] = factory();
-})(this, function() {
-return webpackJsonpreact_sentence_autocomplete_component([1],{
+		root["SentenceAutoComplete"] = factory(root["React"]);
+})(this, function(__WEBPACK_EXTERNAL_MODULE_0__) {
+return webpackJsonpSentenceAutoComplete([0],[
+/* 0 */
+/***/ (function(module, exports) {
 
-/***/ 19:
+module.exports = __WEBPACK_EXTERNAL_MODULE_0__;
+
+/***/ }),
+/* 1 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -23,7 +28,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "BooleanField", function() { return BooleanField; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "SelectSwitchCase", function() { return SelectSwitchCase; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "SelectSwitch", function() { return SelectSwitch; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react__ = __webpack_require__(18);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_react__);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -230,6 +235,5 @@ var SelectSwitch = function SelectSwitch(_ref3) {
 };
 
 /***/ })
-
-},[19]);
+],[1]);
 });

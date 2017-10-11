@@ -11,8 +11,12 @@ export default () => ({
     output: {
         path: path.join(__dirname, 'dist'),
         filename: '[name].js',
-        library: packageJson.name,
+        library: packageJson.library,
         libraryTarget: 'umd',
+    },
+
+    externals: {
+        "react": "React"
     },
 
     module: {

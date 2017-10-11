@@ -1,7 +1,7 @@
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// install a JSONP callback for chunk loading
-/******/ 	var parentJsonpFunction = window["webpackJsonpreact_sentence_autocomplete_component"];
-/******/ 	window["webpackJsonpreact_sentence_autocomplete_component"] = function webpackJsonpCallback(chunkIds, moreModules, executeModules) {
+/******/ 	var parentJsonpFunction = window["webpackJsonpSentenceAutoComplete"];
+/******/ 	window["webpackJsonpSentenceAutoComplete"] = function webpackJsonpCallback(chunkIds, moreModules, executeModules) {
 /******/ 		// add "moreModules" to the modules object,
 /******/ 		// then flag all "chunkIds" as loaded and fire callback
 /******/ 		var moduleId, chunkId, i = 0, resolves = [], result;
@@ -34,7 +34,7 @@
 /******/
 /******/ 	// objects to store loaded and loading chunks
 /******/ 	var installedChunks = {
-/******/ 		2: 0
+/******/ 		1: 0
 /******/ 	};
 /******/
 /******/ 	// The require function
