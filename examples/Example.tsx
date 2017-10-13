@@ -6,6 +6,7 @@ import {
     DynamicInput,
     Field,
     NumberField,
+    MultiChoiceField,
     PropsSelector,
     SelectSwitch,
     SelectSwitchCase
@@ -77,7 +78,12 @@ const users = new Field('users', 'Users', [
     new DateField('createdAt', 'Created'),
     new DateField('updatedAt', 'Updated'),
     new BooleanField('credentials.verified', 'Whether Verified'),
-    new Field('role', 'Access Level'),
+    new MultiChoiceField('role', 'Access Level', [
+        new Field('admin', 'Admin'),
+        new Field('restricted', 'Restricted'),
+        new Field('team_member', 'Team Member'),
+        new Field('limited', 'Limited'),
+    ]),
 ]);
 
 
@@ -98,7 +104,7 @@ const contacts = new Field('contacts', 'Contacts', [
 const activities = new Field('activities', 'Activities', [
     new Field('companyId', 'Company'),
     new Field('eventType', 'Event Type'),
-    new DateField('published', 'Occurences'),
+    new DateField('published', 'Occurrence'),
 ]);
 
 const count =  new Field('count','Count',[ users, companies, contacts, activities ])

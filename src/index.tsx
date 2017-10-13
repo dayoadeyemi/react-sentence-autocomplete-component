@@ -114,6 +114,18 @@ export class BooleanField extends Field {
     )
 }
 
+export class MultiChoiceField extends Field {
+    Input = props =>  (
+        <select
+        style={style}
+        name={props.id}
+        id={props.id}
+        defaultValue={props.value}>
+           {this.properties.map(({ id, value }) => <option value={id}>{value}</option>)}
+        </select>
+    )
+}
+
 export const SelectSwitchCase: React.StatelessComponent<{ id: string, value:string, children?: React.ReactNode }> =(props) => null
 export const SelectSwitch: React.StatelessComponent<{
     id: string
