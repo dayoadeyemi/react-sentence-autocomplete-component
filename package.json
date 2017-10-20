@@ -17,6 +17,7 @@
     "react-dom": "~0.14.8 || ^15.0.0"
   },
   "dependencies": {
+    "prop-types": "^15.6.0",
     "react": "^15.6.2",
     "react-cookie": "^1.0.5"
   },

@@ -1,66 +1,34 @@
 import * as React from 'react';
+import PropTypes from 'prop-types';
 
 import {
-    BooleanField,
-    DateField,
     DynamicInput,
-    Field,
-    NumberField,
-    MultiChoiceField,
-    PropsSelector,
-    SelectSwitch,
-    SelectSwitchCase
+    SelectComponent,
+    SelectSwitchCase,
+    Sentence,
+    Selector,
+    Option,
 } from '../src/index';
 
-
-const Query = ({ id, idx = 0, properties, choices, children }: {
-    id: string
-    idx?: number
-    choices: { [x: string]: string }
-    properties: Field[]
-    children?: React.ReactNode
-}) => (
-    <PropsSelector required choices={choices} id={`${id}.${idx}.fieldId`} properties={properties}>{field => <span>
-        <PropsSelector required choices={choices} id={`${id}.${idx}.op`} properties={field.conditions}/>
-        <field.Input id={`${id}.${idx}.value`} value={choices[`${id}.${idx}.value`]}/>
-        <SelectSwitch choices={choices} id={`${id}.${idx+1}`}>
-            <SelectSwitchCase id='where' value=', and'>
-                <Query id={id}
-                properties={properties.filter(({ id }) => id !== field.id)}
-                idx={idx+1}
-                choices={choices}>
-                    {children}
-                </ Query>
-            </SelectSwitchCase>
-            {children}
-        </SelectSwitch>
-    </span>}</PropsSelector>
-)
-const Alternatives = ({ id, idx = 0, properties, choices, children}: {
-    id: string
-    idx?: number
-    choices: { [x: string]: string }
-    properties: Field[]
-    children?: React.ReactNode
-}) => {
-    const alt = (
-        <Query id={`${id}.${idx}`} properties={properties} choices={choices}>
-        <SelectSwitchCase id='or' value='; or'>
-            <Alternatives id={id} properties={properties} idx={idx+1} choices={choices} >
-                {children}
-            </Alternatives>
-        </SelectSwitchCase>
-        {children}
-    </Query>
+interface FieldSelectProps {
+    id: string,
+    choices: { [x: string]: string },
+    children?: (field: Field) => React.ReactNode,
+    required?: boolean
+}
+export class Field {
+    Prefix(props?: any){
+        return null
+    }
+    get conditions(){ return [new Field('eq', 'is'), new Field('neq','is not')] }
+    constructor(public id: string, public value: string, public options?: Field[]){}
+    type: 'string'
+    Input = props => (
+        <DynamicInput placeholder='<blank>' id={props.id} name={props.id} defaultValue={props.value} />
     )
-    return idx ? alt : (
-    <SelectSwitch choices={choices} id={`${id}.${idx}`}>
-        <SelectSwitchCase id='where' value={idx ? 'and' : 'where'}>
-            {alt}
-        </SelectSwitchCase>
-        {children}
-    </SelectSwitch>
-    )
+}
+export class NumberField extends Field {
+    Input = props => <DynamicInput id={props.id} name={props.id} defaultValue={props.value} type='number'/>
 }
 
 const intervals = [
@@ -72,6 +40,120 @@ const intervals = [
     new Field('seconds', 'Second'),
     new Field('milliseconds', 'Millisecond'),
 ]
+export class DateField extends Field {
+ Prefix({ id }: { id: string }){
+        return <Selector required ids={[id]} options={intervals} />
+    }
+    get conditions(){ return [new Field('gt', 'after'), new Field('lt','before')] }
+    Input = props =>  <input id={props.id} name={props.id} defaultValue={props.value} type='date'/>
+}
+
+export class NestedField extends Field {
+    Input = props => (
+        <Selector
+            ids={[props.id]}
+            options={this.options} />
+    )
+}
+
+export class MultiChoiceField extends Field {
+    constructor(
+        id: string,
+        value: string,
+        public values: {id:string, value:string}[]
+    ){
+        super(id, value)
+    }
+    Input = props =>  (
+        <Selector required ids={[props.id]} options={this.values}/>
+    )
+}
+export class BooleanField extends MultiChoiceField {
+    constructor(id: string, value: string){
+        super(id, value, [{
+            id: 'true',
+            value: 'True'
+        }, {
+            id: 'false',
+            value: 'False'
+        }])
+    }
+}
+
+const Condition: React.StatelessComponent<{
+    id: string,
+    options: Field[]
+    children: (...fields: Field[]) => React.ReactNode
+}> = ({ id, options, children}) => (
+    <Selector required ids={[`${id}.field`,`${id}.subFieldProp`]} options={options}>{(...fields: Field[]) => {
+        const field = fields[fields.length-1]
+        const Input = field.Input;
+        return <span>
+            <Selector required ids={[`${id}.op`]} options={field.conditions}/>
+            <Input id={`${id}.value`} value={choices[`${id}.value`]}/>
+            {children(...fields)}
+        </span>
+    }}</Selector>
+)
+Condition.contextTypes = {
+    setChoice: PropTypes.func,
+    getChoice: PropTypes.func
+}
+
+const Query: React.StatelessComponent<{
+    id: string
+    idx?: number
+    options: Field[]
+}> = ({ id, idx = 0, options, children }) => (
+    <Condition id={`${id}.${idx}`} options={options}>{selected =>{
+        const filteredOptions = options.filter(f => f.id !== selected.id)
+        return <Selector ids={[`${id}.${idx+1}.option`]}>
+            {filteredOptions.length && <SelectSwitchCase id='where' value=', and'>
+                <Query
+                id={id}
+                options={filteredOptions}
+                idx={idx+1}>
+                    {children}
+                </Query>
+            </SelectSwitchCase>}
+            {children}
+        </Selector>
+    }
+    }</Condition>
+)
+Query.contextTypes = {
+    setChoice: PropTypes.func,
+    getChoice: PropTypes.func
+}
+
+const Alternatives: React.StatelessComponent<{
+    id: string
+    idx?: number
+    options: Field[]
+}> = ({ id, idx = 0, options, children }) => {
+    const alt = (
+        <Query id={`${id}.${idx}`} options={options}>
+            <SelectSwitchCase id='or' value='; or'>
+                <Alternatives id={id} idx={idx+1} options={options}>
+                    {children}
+                </Alternatives>
+            </SelectSwitchCase>
+            {children}
+        </Query>
+        )
+    return idx ? alt : (
+    <Selector ids={[`${id}.${idx}.option`]}>
+        <SelectSwitchCase id='where' value={idx ? 'and' : 'where'}>
+            {alt}
+        </SelectSwitchCase>
+        {children}
+    </Selector>
+    )
+}
+Alternatives.contextTypes = {
+    setChoice: PropTypes.func,
+    getChoice: PropTypes.func
+}
 
 const users = new Field('users', 'Users', [
     new Field('companyId', 'Company'),
@@ -95,6 +177,10 @@ const companies = new Field('companies', 'Companies', [
 const contacts = new Field('contacts', 'Contacts', [
     new Field('type', 'Type'),
     new Field('companyId', 'Company'),
+    new NestedField('vacancies', 'Vacancy', [
+        new Field('value', 'Name'),
+        new Field('stage.value', 'Stage'),
+    ]),
     new Field('status.value', 'Status'),
     new Field('creationSource.value', 'Creation Source'),
     new DateField('createdAt', 'Created'),
@@ -109,7 +195,7 @@ const activities = new Field('activities', 'Activities', [
 
 const count =  new Field('count','Count',[ users, companies, contacts, activities ])
 
-const charts = new Field('charts','Charts', [ count ])
+const charts = [ count ]
 
 interface Choices {
     [x: string]: string
@@ -119,28 +205,6 @@ interface Choices {
     interval?: string
     stacks?: string
 }
-
-const ReportSelector = ({ choices }: { choices: Choices }) =>
-    <PropsSelector choices={choices} id='chart' properties={charts.properties}>{chart =>
-        <PropsSelector choices={choices} id='type' properties={chart.properties}>{type => (
-            <Alternatives id='alternatives' properties={type.properties} choices={choices}>
-                <SelectSwitchCase id='group' value='grouped by'>
-                    <PropsSelector choices={choices} id='columns' properties={type.properties}
-                    pre={column => column instanceof DateField && (
-                        <PropsSelector required choices={choices} id='interval' properties={intervals} />
-                    )}>{column => (
-                        <PropsSelector choices={choices} id='split' properties={[new Field('split','split by')]}>{field =>
-                            <PropsSelector
-                                choices={choices}
-                                id='stacks'
-                                properties={type.properties}
-                                filter={field => !(field instanceof DateField) && field.id !== column.id} />}
-                        </PropsSelector>
-                    )}</PropsSelector>
-                </SelectSwitchCase>
-            </Alternatives>
-        )}</PropsSelector>
-    }</PropsSelector>
 
 function parse(a: string[]) {
     var b = {};
@@ -180,12 +244,36 @@ function group(o: { [x: string]: string }){
 
 const choices = parse(window.location.search.substr(1).split('&'));
 
-
+const isAllowedStack =(column: Field)=>(selected: Field)=>
+    !(column.id === selected.id ||
+        selected instanceof DateField)
 class Example extends React.Component {
     render() {
         return (
             <form>
-                <ReportSelector choices={choices}/>
+                <Sentence choices={choices}>
+                    <Selector ids={['chart', 'type']} options={charts}>{(chart: Field, type: Field) =>
+                        <Alternatives id='query' options={type.options}>
+                            <SelectSwitchCase id='group' value='grouped by'>
+                                <Selector
+                                required
+                                ids={['group.fieldId', 'group.subFieldId']}
+                                pre={(option: Field)=>
+                                    option.Prefix({id: 'columns.interval'})}
+                                options={type.options}>{(column: Field, subColumn: Field) =>
+                                    <Selector ids={['do_split']}>
+                                        <SelectSwitchCase id='split' value='split by'>
+                                            <Selector
+                                                ids={['split.fieldId', 'split.subFieldId']}
+                                                filter={isAllowedStack(column)}
+                                                options={type.options}/>
+                                        </SelectSwitchCase>
+                                    </Selector>
+                                }</Selector>
+                            </SelectSwitchCase>
+                        </Alternatives>
+                    }</Selector>
+                </Sentence>
                 <input type="submit" value="Submit"/>
             </form>
         )

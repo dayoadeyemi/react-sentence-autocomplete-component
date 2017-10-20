@@ -16,7 +16,8 @@ export default () => ({
     },
 
     externals: {
-        "react": "React"
+        "react": "React",
+        "prop-types": "PropTypes"
     },
 
     module: {

@@ -1,4 +1,5 @@
 import * as React from 'react'
+import PropTypes from 'prop-types';
 
 const style: React.CSSProperties = {
     border: '1px',
@@ -8,64 +9,155 @@ const style: React.CSSProperties = {
     display: 'inline-block',
 }
 
-export class PropsSelector extends React.Component<{
-    id?: string,
-    properties: Field[]
-    children?: (field: Field) => React.ReactNode
-    required?: boolean
-    choices: { [x: string]: string }
-    filter?: (field: Field) => boolean
-    map?: (field: Field) => Field
-    pre?: (field: Field) => React.ReactNode
+export interface Option {
+    id?: string
+    value: string
+    children?: React.ReactChildren
+    options?: Option[]
+}
+
+export const SelectComponent = <T extends Option>  (props: {
+    id?: string
+    name?: string
+    value?: string
+    options: T[]
+    onValueChange?: (value:string) => void
+}) => {
+    let select: HTMLSelectElement
+    let hiddenSelect: HTMLSelectElement
+    let hiddenOption: HTMLOptionElement
+    const onValueChange = props.onValueChange || ($=>$)
+    const options = props.options || [];
+
+    const resize = () => {
+        if (!select || !hiddenSelect || !hiddenOption || !select.options[select.selectedIndex]) return;
+        hiddenOption.innerText = select.options[select.selectedIndex].text;
+        select.style.width = hiddenSelect.getBoundingClientRect().width + 'px'
+    }
+
+    return <span>
+        <select ref={$=>{hiddenSelect=$;resize()}} style={{
+            position: 'absolute',
+            visibility: 'hidden'
+        }}>
+            <option ref={$=>{hiddenOption=$;resize()}}></option>
+        </select>
+        <select
+            id={props.id}
+            value={props.value}
+            name={props.name}
+            ref={$=>{select=$;resize()}}
+            onChange={e =>{onValueChange(e.target.value)}}
+            onBlur={e =>{onValueChange((e.target as HTMLSelectElement).value)}}
+            style={style}>
+            {options.map(({id, value}) =>
+                <option key={id} value={id}>{value}</option>
+            )}
+        </select>
+    </span>
+}
+
+export interface SelectorProps {
+    ids: string[]
     placeholder?: string
+    required?: boolean
+    filter?: (option: Option) => boolean
+    pre?: (...options: Option[]) => React.ReactNode
+    options?: Option[]
+    children?: React.ReactNode | ((...options: Option[]) => React.ReactNode)
+}
+
+export type Selector = React.StatelessComponent<SelectorProps>
+export const Selector: React.StatelessComponent<SelectorProps> = (props, {
+    getChoice,
+    setChoice
+}: {
+    setChoice: (id: string, value: string) => void,
+    getChoice: (id: string) => string
+}) => {
+    const {
+        filter=$=>true,
+        ids=[],
+        pre=()=>null,
+        children,
+        required=false,
+        placeholder= '',
+        options=React.Children.toArray(props.children)
+        .filter((child: React.ReactElement<Option>) =>
+            child && child.type === SelectSwitchCase)
+        .map((child: React.ReactElement<Option>) => child.props)
+    } = props
+
+    let availableOptions = (required ? [] : [{value: placeholder} as Option])
+    .concat(options)
+        .filter(filter)
+
+    const components = [
+    ] as React.ReactNode[]
+
+    const selections = []
+
+    let selected = false
+    for (var i = 0; i < ids.length; i++) {
+        if (!availableOptions) break
+        let id = ids[i]
+        selected = false
+        components.push(
+            <SelectComponent
+            key={id}
+            onValueChange={value=>setChoice(id, value)}
+            name={id}
+            id={id}
+            value={getChoice(id)}
+            options={availableOptions} />)
+
+        let selection = availableOptions.find(option => option.id === getChoice(id))
+        if (selection && selection.id) {
+            selections.push(selection)
+            selected = true
+            availableOptions = selection && selection.options
+        } else {
+            break
+        }
+    }
+
+    const prefix = selected && pre(...selections)
+    const rest = selected && (selections[0].children ||
+        typeof children === 'function' && children(...selections))
+
+    return <span>
+        {prefix}
+        {components}
+        {rest}
+    </span>
+}
+Selector.contextTypes = {
+        setChoice: PropTypes.func,
+        getChoice: PropTypes.func
+}
+export class Sentence extends React.Component<{
+    choices?: { [x: string]: string }
 }, { [x: string]: string }> {
-    hiddenOption: HTMLOptionElement
-    hiddenSelect: HTMLSelectElement
     constructor(props){
         super(props)
-        this.state = props.choices
+        this.state = props.choices || {}
     }
-    resize = (ele: HTMLSelectElement) => {
-        if (!this.hiddenSelect || !this.hiddenOption || !ele.options[ele.selectedIndex]) return
-        this.hiddenOption.innerText = ele.options[ele.selectedIndex].text;
-        ele.style.width = this.hiddenSelect.getBoundingClientRect().width + 'px'
-        this.setState({ [this.props.id]: ele.value })
+    static childContextTypes = {
+        setChoice: PropTypes.func,
+        getChoice: PropTypes.func
     }
-    onChange: React.EventHandler<React.SyntheticEvent<HTMLSelectElement>> = e => {
-        this.resize(e.target as HTMLSelectElement)
+    getChildContext() {
+      return {
+          setChoice: (id: string, value: string) => this.setState({[id]: value}),
+          getChoice: (id: string) => this.state[id]
+        };
     }
     render(){
-        const { filter=$=>true, map=$=>$ } = this.props
-        const selected = this.props.properties.filter(filter).map(map).find(({ id }) => id === this.state[this.props.id])
-        return (
-            <span>
-                {selected && this.props.pre && this.props.pre(selected)}
-                <select ref={$ => this.hiddenSelect=$} style={{
-                    position: 'absolute',
-                    visibility: 'hidden'
-                }}>
-                    <option ref={$ => this.hiddenOption=$}></option>
-                </select>
-                <select
-                style={style}
-                ref={this.resize}
-                onLoad={this.onChange}
-                onChange={this.onChange}
-                onBlur={this.onChange}
-                name={this.props.id}
-                id={this.props.id}
-                value={this.state[this.props.id] ||''}>
-                    {!this.props.required && <option value="">{this.props.placeholder || ''}</option>}
-                    {this.props.properties.filter(filter).map(map).map(({ id, value }) => 
-                        <option key={id} value={id}>{value}</option>)}
-                </select>
-                {selected && this.props.children && this.props.children(selected)}
-            </span>
-        )
+        return this.props.children as any
     }
 }
 
-export class DynamicInput extends React.Component<React.InputHTMLAttributes<HTMLInputElement>> {
+export class DynamicInput extends React.PureComponent<React.InputHTMLAttributes<HTMLInputElement>> {
     hiddenSpan: HTMLSpanElement
     resize = (ele: HTMLInputElement) => {
         if (!this.hiddenSpan) return
@@ -86,59 +178,4 @@ export class DynamicInput extends React.Component<React.InputHTMLAttributes<HTML
     }
 }
 
-export class Field {
-    get conditions(){ return [new Field('eq', 'is'), new Field('neq','is not')] }
-    constructor(public id: string, public value: string, public properties: Field[] = []){}
-    type: 'string'
-    Input = props =>  <DynamicInput placeholder='<blank>' id={props.id} name={props.id} defaultValue={props.value} />
-}
-
-export class NumberField extends Field {
-    Input = props => <DynamicInput style={style} id={props.id} name={props.id} defaultValue={props.value} type='number'/>
-}
-
-export class DateField extends Field {
-    get conditions(){ return [new Field('gt', 'after'), new Field('lt','before')] }
-    Input = props =>  <input  style={style} id={props.id} name={props.id} defaultValue={props.value} type='date'/>
-}
-export class BooleanField extends Field {
-    Input = props => (
-        <select
-            style={style}
-            name={props.id}
-            id={props.id}
-            defaultValue={props.value}>
-            <option value='true'>True</option>
-            <option value='false'>False</option>
-        </select>
-    )
-}
-
-export class MultiChoiceField extends Field {
-    Input = props =>  (
-        <select
-        style={style}
-        name={props.id}
-        id={props.id}
-        defaultValue={props.value}>
-           {this.properties.map(({ id, value }) => <option value={id}>{value}</option>)}
-        </select>
-    )
-}
-
 export const SelectSwitchCase: React.StatelessComponent<{ id: string, value:string, children?: React.ReactNode }> =(props) => null
-export const SelectSwitch: React.StatelessComponent<{
-    id: string
-    choices: { [x: string]: string }
-}> =({ id, choices, children }) => (
-    <PropsSelector
-    choices={choices}
-    id={id}
-    properties={
-        React.Children.toArray(children)
-        .filter((child: React.ReactElement<Field>) => child && child.type === SelectSwitchCase)
-        .map((child: React.ReactElement<Field>) => child.props)
-    }>{(field : Field & { children: React.ReactNode}) =>
-        field.children
-    }</PropsSelector>
-)
