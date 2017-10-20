@@ -16,7 +16,7 @@ export interface Option {
     options?: Option[]
 }
 
-export const SelectComponent = <T extends Option>  (props: {
+const SelectComponent = <T extends Option>  (props: {
     id?: string
     name?: string
     value?: string
@@ -131,10 +131,11 @@ export const Selector: React.StatelessComponent<SelectorProps> = (props, {
         {rest}
     </span>
 }
-Selector.contextTypes = {
-        setChoice: PropTypes.func,
-        getChoice: PropTypes.func
+export const SelectorContextTypes = {
+    setChoice: PropTypes.func,
+    getChoice: PropTypes.func
 }
+Selector.contextTypes = SelectorContextTypes
 export class Sentence extends React.Component<{
     choices?: { [x: string]: string }
 }, { [x: string]: string }> {
@@ -154,27 +155,6 @@ export class Sentence extends React.Component<{
     }
     render(){
         return this.props.children as any
-    }
-}
-
-export class DynamicInput extends React.PureComponent<React.InputHTMLAttributes<HTMLInputElement>> {
-    hiddenSpan: HTMLSpanElement
-    resize = (ele: HTMLInputElement) => {
-        if (!this.hiddenSpan) return
-        this.hiddenSpan.innerText = ele.value || ele.placeholder;
-        ele.style.width = (this.hiddenSpan.getBoundingClientRect().width) + 'px'
-    }
-    render(){
-        return (
-            <span>
-                <span  ref={$ => this.hiddenSpan = $} style={{
-                    minWidth: '20px',
-                    position: 'absolute',
-                    visibility: 'hidden'
-                }}></span>
-                <input {...this.props } style={style} ref={this.resize} onKeyPress={e => this.resize(e.target as HTMLInputElement)}/>
-            </span>
-        )
     }
 }
 
