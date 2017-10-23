@@ -5,7 +5,9 @@ const packageJson = require('./package.json');
 
 export default () => ({
     entry: {
-        index: path.join(__dirname, 'src/index.tsx'),
+        'sentence-autocomplete-core': path.join(__dirname, 'src/sentence-autocomplete-core.tsx'),
+        'sentence-autocomplete-fields': path.join(__dirname, 'src/sentence-autocomplete-fields.tsx'),
+        'sentence-autocomplete-report': path.join(__dirname, 'src/sentence-autocomplete-report.tsx'),
     },
 
     output: {

@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Selector } from './index'
+import { Selector } from './sentence-autocomplete-core'
 export class DynamicInput extends React.PureComponent<React.InputHTMLAttributes<HTMLInputElement>> {
     hiddenSpan: HTMLSpanElement
     resize = (ele: HTMLInputElement) => {
